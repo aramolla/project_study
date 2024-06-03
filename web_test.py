@@ -5,7 +5,7 @@ import streamlit as st
 # Set up page configuration
 st.set_page_config(
     page_title="AI 수뭉", 
-    page_icon="/Users/aramolla/Desktop/project/수뭉1.png",  # 이미지 파일 경로
+    page_icon="./수뭉1.png",  # 이미지 파일 경로
     layout="wide"
 )
 st.title("AI 수뭉 💬")
@@ -98,7 +98,7 @@ if "store" not in st.session_state:
     st.session_state["store"] = dict()
 
 with st.sidebar:
-    st.image("/Users/aramolla/Desktop/project/수뭉_2.png", width=200)
+    st.image("./수뭉_2.png", width=200)
 
     session_id = st.text_input("Session ID", value="ara123")
     clear_btn = st.button("초기화")
