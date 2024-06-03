@@ -4,7 +4,7 @@ import streamlit as st
 
 # Set up page configuration
 st.set_page_config(
-    page_title="AI 수뭉", 
+    page_title="상명대학교 CHATBOT", 
     page_icon="./수뭉1.png",  # 이미지 파일 경로
     layout="wide"
 )
