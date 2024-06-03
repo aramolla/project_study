@@ -136,19 +136,19 @@ if user_input := st.chat_input("메시지를 입력해 주세요."):
         stream_handler = StreamHandler(container)
 
         # 모델 생성  gpt-3.5-turbo-1106 gpt-4o-2024-05-13
-        GPT_4o = ChatOpenAI(model="gpt-3.5-turbo-1106", streaming=True, callbacks=[stream_handler])
+        GPT_4o = ChatOpenAI(model="gpt-4o-2024-05-13", streaming=True, callbacks=[stream_handler])
         embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
         # 벡터 저장소 로드
         def load_vector_store(path):
             return FAISS.load_local(path, embeddings, allow_dangerous_deserialization=True)
 
-        vector_store_path = "./vector_store_학교정보"
+        vector_store_path = "./merged_vector_store"
         db = load_vector_store(vector_store_path)
 
         retriever = db.as_retriever(
             search_type="similarity",
-            search_kwargs={'k': 20}
+            search_kwargs={'k': 50}
         )
 
 
