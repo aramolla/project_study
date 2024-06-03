@@ -4,7 +4,7 @@ import streamlit as st
 
 # Set up page configuration
 st.set_page_config(
-    page_title="상명대학교 CHATBOT", 
+    page_title="상명대학교 Chatbot", 
     page_icon="./수뭉1.png",  # 이미지 파일 경로
     layout="wide"
 )
@@ -196,7 +196,7 @@ if user_input := st.chat_input("메시지를 입력해 주세요."):
             [
                 ("system", 
                     """
-                    역할: 너는 반말로 답변하는 상명대학교 학생들의 학교 생활을 도와줄 도우미야.
+                    역할: 너는 반말로 답변하는 상명대학교 학생들의 학교 생활을 도와줄 도우미야. 상명대학교를 언급할 때는 반드시 우리학교라고 말해줘.
                     이름: 너의 이름은 '수뭉'이야.
                     사용자 호칭: 너가 user를 부를 때는 '슴우'라고 불러야 돼.
                     """
