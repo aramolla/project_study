@@ -1,11 +1,11 @@
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-import os
 import streamlit as st
+import os
 
 # Set up page configuration
 st.set_page_config(
-    page_title="상명대학교 Chatbot", 
-    page_icon="./수뭉1.png",  # 이미지 파일 경로
+    page_title="상명대학교 Chat bot", 
+    page_icon="/Users/aramolla/Desktop/project/수뭉1.png",  # 이미지 파일 경로
     layout="wide"
 )
 st.title("AI 수뭉 💬")
@@ -84,6 +84,7 @@ custom_css = """
 
             </style>
             """
+
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # OpenAI API Key 설정
@@ -98,7 +99,7 @@ if "store" not in st.session_state:
     st.session_state["store"] = dict()
 
 with st.sidebar:
-    st.image("./수뭉_2.png", width=200)
+    st.image("/Users/aramolla/Desktop/project/수뭉_2.png", width=200)
 
     session_id = st.text_input("Session ID", value="ara123")
     clear_btn = st.button("초기화")
@@ -127,120 +128,185 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.base import RunnableSequence, RunnableLambda
 from langchain_core.runnables.history import RunnableWithMessageHistory
 
+def trim_messages(messages, max_tokens=16000): # 추가
+    total_tokens = 0
+    trimmed_messages = []
+    for message in reversed(messages):
+        total_tokens += len(message[1].split())
+        if total_tokens <= max_tokens:
+            trimmed_messages.append(message)
+        else:
+            break
+    return list(reversed(trimmed_messages))
+
+# 중복된 문장을 제거하는 함수
+def remove_duplicates(response_list):
+    seen = set()
+    result = []
+    for response in response_list:
+        if response not in seen:
+            seen.add(response)
+            result.append(response)
+    return result
+
 if user_input := st.chat_input("메시지를 입력해 주세요."):
     st.session_state["messages"].append(("user", user_input))
     st.chat_message("user").write(f"{user_input}")
 
-    with st.chat_message("assistant"):
-        container = st.empty()
-        stream_handler = StreamHandler(container)
+    # with st.chat_message("assistant"):
+    container = st.empty()
+    stream_handler = StreamHandler(container)
 
-        # 모델 생성  gpt-3.5-turbo-1106 gpt-4o-2024-05-13
-        GPT_4o = ChatOpenAI(model="gpt-4o-2024-05-13", streaming=True, callbacks=[stream_handler])
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+    # 모델 생성
+    GPT_4o = ChatOpenAI(model="gpt-3.5-turbo-1106", streaming=True, callbacks=[stream_handler]) # "gpt-4o-2024-05-13"    16,385	
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
-        # 벡터 저장소 로드
-        def load_vector_store(path):
-            return FAISS.load_local(path, embeddings, allow_dangerous_deserialization=True)
+    # 벡터 저장소 로드
+    def load_vector_store(path):
+        return FAISS.load_local(path, embeddings, allow_dangerous_deserialization=True)
 
-        vector_store_path = "./merged_vector_store"
-        db = load_vector_store(vector_store_path)
+    # pdf때메 주석해둠
+    vector_store_path = "/Users/aramolla/Desktop/project/vector_store_공지사항"
+    db = load_vector_store(vector_store_path)
 
-        retriever = db.as_retriever(
+    # from langchain.text_splitter import RecursiveCharacterTextSplitter
+    # from langchain.document_loaders import PyPDFLoader
+
+    # loader = PyPDFLoader("/Users/aramolla/Desktop/project/글로벌1.pdf")
+    # pages = loader.load_and_split()
+
+    # text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    # texts = text_splitter.split_documents(pages)
+
+    # db = FAISS.from_documents(texts, embeddings)
+
+
+    from langchain.retrievers.multi_query import MultiQueryRetriever
+
+    # MultiQueryRetriever 설정
+    retriever_from_llm = MultiQueryRetriever.from_llm(
+        retriever=db.as_retriever(
             search_type="similarity",
-            search_kwargs={'k': 50}
-        )
+            search_kwargs={'k': 5}#  50 -> 5
+        ), llm=GPT_4o
+    )
+
+    #쿼리 로깅 해주기
+    import logging
+
+    logging.basicConfig()
+    logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
+
+
+    # retriever = db.as_retriever(
+    #     search_type="similarity",
+    #     search_kwargs={'k': 5}#  50 -> 5
+    # )
+
+
+    prompt_template = """
+    ### [INST]
+    AI수뭉입니다! 궁금한걸 물어보쇼
+
+    {context}
+
+    ### 질문:
+    {question}
+
+    [/INST]
+    답변!
+    """
+
+    # 프롬프트 생성
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", 
+                """
+                역할: 너는 반말로 답변하는 상명대학교 학생들의 학교 생활을 도와줄 도우미야.
+                이름: 너의 이름은 '수뭉'이야.
+                사용자 호칭: 너가 user를 부를 때는 '슴우'라고 불러야 돼.
+                """
+            ),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", prompt_template.format(context="{context}", question="{question}")),
+        ]
+    )
+
+    # LLM 체인 생성
+    llm_chain = prompt | GPT_4o
+
+    # rag_chain 정의 수정
+    rag_chain = RunnableSequence(
+        RunnableLambda(lambda x: {
+            "context": [doc.page_content for doc in retriever_from_llm.get_relevant_documents(x["question"])],
+            "question": x["question"],
+            "history": x["history"]  # 추가된 부분
+        }),
+        llm_chain
+    )
+
+    chain_with_memory = RunnableWithMessageHistory(
+        rag_chain,
+        lambda session_id: get_session_history(session_id),
+        input_messages_key="question",
+        history_messages_key="history",
+    )
+
+
+    # 이전 질문에 대한 답변을 추적하고 처리하는 함수
+    def get_relevant_context(history):
+        if not history:
+            return ""
+        for message in reversed(history):
+            if message[0] == "assistant":
+                return message[1]
+        return ""
+
+    # 이전 답변에서 맥락을 찾음
+    context = get_relevant_context(st.session_state["messages"])
+    context_list = context.split('\n')
+    context_list = remove_duplicates(context_list)
+    context = '\n'.join(context_list)
+
+    # 채팅 기록을 트리밍하여 최대 토큰 길이 제한을 초과하지 않도록 함
+    trimmed_messages = trim_messages(st.session_state["messages"])
+    trimmed_messages = [(role, remove_duplicates([message])[0]) for role, message in trimmed_messages]
+    
+
+    relevant_docs = retriever_from_llm.get_relevant_documents(user_input)
+    detailed_info = None
 
 
 
+    similar_questions = [doc.page_content for doc in relevant_docs]
+    combined_response = "\n".join([f"{i+1}. {q}" for i, q in enumerate(similar_questions)])
+
+    # 중복된 문장을 제거하는 함수
+    def remove_duplicates(response_list):
+        seen = set()
+        result = []
+        for response in response_list:
+            if response not in seen:
+                seen.add(response)
+                result.append(response)
+        return result
+
+    # chain_with_memory.invoke 호출 부분 수정
+    response = chain_with_memory.invoke(
+        {"question": user_input, "history": trimmed_messages, "context": context},  # history와 context 추가 # trimmed_messages -> st.session_state["messages"]
+        config={'configurable': {'session_id': session_id}}
+    )
+
+    msg = response.content  # 속성으로 접근
+
+    # 중복 문장을 제거
+    msg_list = msg.split('\n')
+    msg_list = remove_duplicates(msg_list)
+    final_msg = '\n'.join(msg_list)
+
+    # st.write(msg)
+    st.session_state["messages"].append(("assistant", final_msg))
 
 
-
-
-        # from langchain.schema import Document
-        # from langchain_community.vectorstores import Chroma
-        # from langchain.retrievers.self_query.base import SelfQueryRetriever
-
-        # document_content_description = "학교 홈페이지 정보"
-
-        # retriever = SelfQueryRetriever.from_llm(
-        #     GPT_4o,
-        #     db,
-        #     document_content_description,
-        #     metadata_field_info,
-        #     verbose = True
-        # )
-
-
-
-
-
-
-
-
-        prompt_template = """
-        ### [INST]
-        AI수뭉입니다! 궁금한걸 물어보쇼
-
-        {context}
-
-        ### 질문:
-        {question}
-
-        [/INST]
-        답변!
-        """
-
-        # 프롬프트 생성
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", 
-                    """
-                    역할: 너는 반말로 답변하는 상명대학교 학생들의 학교 생활을 도와줄 도우미야. 상명대학교를 언급할 때는 반드시 "우리 학교"라고 지칭해줘.
-                    이름: 너의 이름은 '수뭉'이야.
-                    사용자 호칭: 너가 user를 부를 때는 '슴우'라고 불러야 돼.
-                    """
-                ),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", prompt_template.format(context="{context}", question="{question}")),
-            ]
-        )
-
-        # LLM 체인 생성
-        llm_chain = prompt | GPT_4o
-
-        # rag_chain 정의 수정
-        rag_chain = RunnableSequence(
-            RunnableLambda(lambda x: {
-                "context": [doc.page_content for doc in retriever.get_relevant_documents(x["question"])],
-                "question": x["question"],
-                "history": x["history"]  # 추가된 부분
-            }),
-            llm_chain
-        )
-
-        chain_with_memory = RunnableWithMessageHistory(
-            rag_chain,
-            lambda session_id: get_session_history(session_id),
-            input_messages_key="question",
-            history_messages_key="history",
-        )
-
-        # chain_with_memory.invoke 호출 부분 수정
-        response = chain_with_memory.invoke(
-            {"question": user_input, "history": []},  # history 추가
-            config={'configurable': {'session_id': session_id}}
-        )
-
-
-        # for i in response['context']:
-        #     print(f"주어진 근거: {i.page_content} / 출처: {i.metadata['source']} - {i.metadata['page']} \n\n")
-
-
-        msg = response.content  # 속성으로 접근
-
-        # st.write(msg)
-        st.session_state["messages"].append(("assistant", msg))
-
-        
-        
+    for role, message in st.session_state["messages"]:
+        st.chat_message(role).write(message)
