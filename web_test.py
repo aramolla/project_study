@@ -143,7 +143,7 @@ if user_input := st.chat_input("메시지를 입력해 주세요."):
         def load_vector_store(path):
             return FAISS.load_local(path, embeddings, allow_dangerous_deserialization=True)
 
-        vector_store_path = "./merged_vector_store"
+        vector_store_path = "./vector_store_학교정보"
         db = load_vector_store(vector_store_path)
 
         retriever = db.as_retriever(
