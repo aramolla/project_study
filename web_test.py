@@ -146,26 +146,33 @@ if user_input := st.chat_input("메시지를 입력해 주세요."):
         vector_store_path = "./merged_vector_store"
         db = load_vector_store(vector_store_path)
 
-        # retriever = db.as_retriever(
-        #     search_type="similarity",
-        #     search_kwargs={'k': 50}
+        retriever = db.as_retriever(
+            search_type="similarity",
+            search_kwargs={'k': 50}
+        )
+
+
+
+
+
+
+
+        # from langchain.schema import Document
+        # from langchain_community.vectorstores import Chroma
+        # from langchain.retrievers.self_query.base import SelfQueryRetriever
+
+        # document_content_description = "학교 홈페이지 정보"
+
+        # retriever = SelfQueryRetriever.from_llm(
+        #     GPT_4o,
+        #     db,
+        #     document_content_description,
+        #     metadata_field_info,
+        #     verbose = True
         # )
 
 
-        from langchain.retrievers.multi_query import MultiQueryRetriever
 
-        # MultiQueryRetriever 설정
-        retriever_from_llm = MultiQueryRetriever.from_llm(
-            retriever=db.as_retriever(
-                search_type="similarity",
-                search_kwargs={'k': 5}#  50 -> 5
-            ), llm=GPT_4o
-        )
-        #쿼리 로깅 해주기
-        import logging
-
-        logging.basicConfig()
-        logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
 
 
 
@@ -205,7 +212,7 @@ if user_input := st.chat_input("메시지를 입력해 주세요."):
         # rag_chain 정의 수정
         rag_chain = RunnableSequence(
             RunnableLambda(lambda x: {
-                "context": [doc.page_content for doc in retriever_from_llm.get_relevant_documents(x["question"])],
+                "context": [doc.page_content for doc in retriever.get_relevant_documents(x["question"])],
                 "question": x["question"],
                 "history": x["history"]  # 추가된 부분
             }),
@@ -236,4 +243,4 @@ if user_input := st.chat_input("메시지를 입력해 주세요."):
         st.session_state["messages"].append(("assistant", msg))
 
         
-        
+     
