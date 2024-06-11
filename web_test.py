@@ -103,8 +103,7 @@ if menu == "메인 페이지":
     pass
 elif menu == "주간 메뉴":
     if st.button("이미지 팝업"):
-        with st.modal("이미지 팝업"):
-            st.image("./menu.jpg", width=200)
+        st.image("./menu.jpg", width=200)
             
 with st.sidebar:    
     st.image("./수뭉_2.png", width=200)
