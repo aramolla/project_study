@@ -97,10 +97,8 @@ if "messages" not in st.session_state:
 if "store" not in st.session_state:
     st.session_state["store"] = dict()
 
-menu = st.sidebar.selectbox("메뉴 선택", ["메인 페이지", "이미지 보기"])
+menu = st.sidebar.selectbox("메뉴", ["메인 페이지", "주간 메뉴"])
 
-if menu == "메인 페이지":
-    st.write("메인 페이지 내용")
 
 elif menu == "이미지 보기":
     if st.button("이미지 팝업"):
