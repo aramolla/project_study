@@ -97,13 +97,16 @@ if "messages" not in st.session_state:
 if "store" not in st.session_state:
     st.session_state["store"] = dict()
 
-menu = st.sidebar.selectbox("메뉴", ["메인 페이지", "주간 메뉴"])
+# menu = st.sidebar.selectbox("메뉴", ["메인 페이지", "주간 메뉴"])
 
-if menu == "메인 페이지":
-    pass
-elif menu == "주간 메뉴":
-    if st.button("이미지 팝업"):
-        st.image("./menu.jpg", width=200)
+# if menu == "메인 페이지":
+#     pass
+# elif menu == "주간 메뉴":
+#     if st.button("이미지 팝업"):
+#         st.image("./menu.jpg", width=200)
+
+if "show_image" not in st.session_state:
+    st.session_state["show_image"] = False
             
 with st.sidebar:    
     st.image("./수뭉_2.png", width=200)
@@ -115,6 +118,11 @@ with st.sidebar:
         if session_id in st.session_state["store"]:
             del st.session_state["store"][session_id]  # 특정 세션 ID에 대한 기록만 삭제
         st.experimental_rerun()
+    if st.button("이미지 토글"):
+        st.session_state["show_image"] = not st.session_state["show_image"]
+
+if st.session_state["show_image"]:
+    st.image("./menu.jpg", width=1000)
 
 
 from utils import print_messages, StreamHandler
