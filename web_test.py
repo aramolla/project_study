@@ -100,9 +100,8 @@ if "store" not in st.session_state:
 menu = st.sidebar.selectbox("메뉴", ["메인 페이지", "주간 메뉴"])
 
 if menu == "메인 페이지":
-    st.write("메인 페이지 내용")
-
-elif menu == "이미지 보기":
+    pass
+elif menu == "주간 메뉴":
     if st.button("이미지 팝업"):
         with st.modal("이미지 팝업"):
             st.image("./menu.jpg", width=200)
