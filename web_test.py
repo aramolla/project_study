@@ -97,6 +97,17 @@ if "messages" not in st.session_state:
 if "store" not in st.session_state:
     st.session_state["store"] = dict()
 
+menu = st.sidebar.selectbox("메뉴 선택", ["메인 페이지", "이미지 보기"])
+
+if menu == "메인 페이지":
+    st.write("메인 페이지 내용")
+
+elif menu == "이미지 보기":
+    if st.button("이미지 팝업"):
+        with st.modal("이미지 팝업"):
+            st.image("./수뭉_2.png", width=200)
+            st.write("이미지 설명")
+            
 with st.sidebar:    
     st.image("./수뭉_2.png", width=200)
 
