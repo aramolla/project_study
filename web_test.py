@@ -98,6 +98,16 @@ if "store" not in st.session_state:
     st.session_state["store"] = dict()
 
 with st.sidebar:
+    choice = option_menu("Menu",
+                         menu_icon="food", default_index=0,
+                         styles={
+        "container": {"padding": "4!important", "background-color": "#fafafa"},
+        "icon": {"color": "black", "font-size": "25px"},
+        "nav-link": {"font-size": "16px", "text-align": "left", "margin":"0px", "--hover-color": "#fafafa"},
+        "nav-link-selected": {"background-color": "#08c7b4"},
+    }
+    )
+    
     st.image("./수뭉_2.png", width=200)
 
     session_id = st.text_input("Session ID", value="ara123")
