@@ -75,7 +75,7 @@ custom_css = """
 
             .stChatMessage-assistant {
                 background-color: #f8f9fa;
-                color: #000000; /* 텍스트 색상을 검정으로 변경함!!!! */
+                color: #000000; /* 텍스트 색상을 검정으로 변경함!!!!! */
                 text-align: left; /* 텍스트 왼쪽 정렬 */
                 margin-right: auto; /* 오른쪽 마진을 자동으로 설정하여 왼쪽 정렬 */
                 justify-content: flex-start; /* 콘텐츠를 왼쪽 정렬 */
